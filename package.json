@@ -15,6 +15,7 @@
     "@types/node": "^16.11.7",
     "@types/rc": "^1.1.0",
     "del": "^6.0.0",
+    "dotenv": "^10.0.0",
     "gulp": "^4.0.2",
     "gulp-nodemon": "^2.5.0",
     "gulp-sourcemaps": "^3.0.0",
