@@ -8,3 +8,5 @@ export function getConfig(name:string): ConfigT {
   }
   return <ConfigT>config;
 }
+
+export const config = getConfig('.env_');

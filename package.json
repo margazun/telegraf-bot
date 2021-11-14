@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^16.11.7",
     "@types/rc": "^1.1.0",
     "del": "^6.0.0",
     "gulp": "^4.0.2",
@@ -22,6 +23,7 @@
   },
   "dependencies": {
     "gulp-cli": "^2.3.0",
-    "rc": "^1.2.8"
+    "rc": "^1.2.8",
+    "telegraf": "^4.4.2"
   }
 }
