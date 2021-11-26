@@ -1,79 +1,46 @@
-import { Context, Markup, Telegraf } from "telegraf";
+import { Markup, Scenes, session, Telegraf } from "telegraf";
 import { getConfig } from '../config';
-import { Payload } from '../types';
-import { commands, text } from './commands';
 
+
+
+const posts: {[key: string]: string} = {
+	48934: 'text 1',
+	349: 'text 2',
+	2030: 'text 3',
+};
+
+const post_keyboard = (post_id: string) => {
+	return Markup.inlineKeyboard([
+		Markup.button.callback('Post', `post:${post_id}`),
+		Markup.button.callback('Remove', `remove:${post_id}`),
+	]);
+}
+const confirm_removal_keyboard = (post_id: string) => {
+	return Markup.inlineKeyboard([
+		Markup.button.callback('Yes', `confirm_removal:${post_id}`),
+		Markup.button.callback('Cancel', `cancel:${post_id}`),
+	]);
+}
+
+const checkScene = new Scenes.BaseScene<Scenes.SceneContext>('checkScene')
+checkScene.enter(ctx => Object.entries(posts).forEach(([id, text]) => ctx.reply(text, post_keyboard(id))));
+checkScene.action(/^post:[0-9]*$/, ctx => { return ctx.answerCbQuery('The post has been published'); });
+
+checkScene.action(/^remove:[0-9]*$/, ctx => {
+	const id = (<any>ctx.callbackQuery).data.split(':')[1];
+	return ctx.editMessageText('Sure?', confirm_removal_keyboard(id));
+});
+
+checkScene.action(/^cancel:[0-9]*$/, ctx => {
+	const id: string = (<any>ctx.callbackQuery).data.split(':')[1];
+	return ctx.editMessageText(posts[id], post_keyboard(id))
+});
 
 const config = getConfig('env_');
 
-export const bot = new Telegraf(config.bot.token);
-bot.start((ctx: Context) => ctx.reply('Welcome'));
-bot.help((ctx: Context) => ctx.reply(commands));
+const stage = new Scenes.Stage<Scenes.SceneContext>([ checkScene ]);
 
-bot.command('course', async (ctx: Context) => {
-	try {
-		await ctx.replyWithHTML(
-			'<b>Courses</b>',
-			Markup.inlineKeyboard([
-				[Markup.button.callback('Editors', 'btn_1'), Markup.button.callback('JS', 'btn_2'), Markup.button.callback('TS', 'btn_3')], 
-				[Markup.button.callback('HTML', 'btn_4')],
-			])
-			);
-	} catch (err) {
-		console.error(err)	;
-	}
-});
-
-// bot.action('btn_1', async (ctx:Context) => {
-// 	try {
-// 		await ctx.answerCbQuery();
-// 		await ctx.replyWithHTML('Button 1', {
-// 			disable_web_page_preview: true
-// 		});
-// 	} catch (err) {
-		
-// 	}
-// });
-
-bot.on('sticker', (ctx: Context) => ctx.reply('👍'));
-bot.hears('hi', (ctx: Context) => ctx.reply('hey there!'));
-
-addActionBot({
-	name: 'btn_1',
-	text: text,
-	src: '/../../../assets/images/1.jpg'
-});
-addActionBot({
-	name: 'btn_2',
-	text: text,
-	src: '/../../../assets/images/2.jpg'
-});
-addActionBot({
-	name: 'btn_3',
-	text: text
-});
-
-
+export const bot = new Telegraf<Scenes.SceneContext>(config.bot.token);
+bot.use(session(), stage.middleware());
+bot.command('/start', ctx => ctx.scene.enter('checkScene'));
 bot.launch();
-process.once('SIGINT', () => bot.stop('SIGINT'));
-
-function addActionBot(payload: Payload) {
-	bot.action(payload.name, async (ctx:Context) => {
-		try {
-			await ctx.answerCbQuery();
-			if('src' in payload) {
-				console.log(payload.src);
-				await ctx.replyWithPhoto({
-					source: __dirname + <string>payload.src,
-					
-				});
-			}
-			await ctx.replyWithHTML(payload.text, {
-				disable_web_page_preview: true
-			});
-		} catch (err) {
-			console.error(err);
-		}
-	});
-}
-
